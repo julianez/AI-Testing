@@ -3,7 +3,7 @@ import os
 from langchain import HuggingFaceHub
 from langchain import PromptTemplate, LLMChain
 
-os.environ["HUGGINGFACEHUB_API_TOKEN"] = "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"
+os.environ["HUGGINGFACEHUB_API_TOKEN"] = ""
 
 repo_id = "google/flan-t5-xxl"  # See https://huggingface.co/models?pipeline_tag=text-generation&sort=downloads for some other options
 
