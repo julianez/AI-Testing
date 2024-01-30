@@ -1,23 +1,22 @@
-import logging
 import os
+import logging
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 
-import click
-import torch
 from langchain.docstore.document import Document
 from langchain.embeddings import HuggingFaceInstructEmbeddings
 from langchain.text_splitter import Language, RecursiveCharacterTextSplitter
 from langchain.vectorstores import Chroma
 # https://python.langchain.com/en/latest/modules/indexes/document_loaders/examples/excel.html?highlight=xlsx#microsoft-excel
-from langchain.document_loaders import CSVLoader, UnstructuredFileLoader, TextLoader, UnstructuredExcelLoader, Docx2txtLoader
+from langchain.document_loaders import CSVLoader, PDFMinerLoader, TextLoader, UnstructuredExcelLoader, Docx2txtLoader
+
+# from dotenv import load_dotenv
 from chromadb.config import Settings
 
-# load_dotenv()
+# Configure the logging module
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+
 ROOT_DIRECTORY = os.path.dirname(os.path.realpath(__file__))
-
-# Define the folder for storing database
 SOURCE_DIRECTORY = f"{ROOT_DIRECTORY}/SOURCE_DOCUMENTS"
-
 PERSIST_DIRECTORY = f"{ROOT_DIRECTORY}/DB"
 
 # Can be changed to a specific number
@@ -29,13 +28,12 @@ CHROMA_SETTINGS = Settings(
     is_persistent=True,
 )
 
-
 # https://python.langchain.com/en/latest/_modules/langchain/document_loaders/excel.html#UnstructuredExcelLoader
 DOCUMENT_MAP = {
     ".txt": TextLoader,
     ".md": TextLoader,
     ".py": TextLoader,
-    ".pdf": UnstructuredFileLoader,
+    ".pdf": PDFMinerLoader,
     ".csv": CSVLoader,
     ".xls": UnstructuredExcelLoader,
     ".xlsx": UnstructuredExcelLoader,
@@ -46,7 +44,6 @@ DOCUMENT_MAP = {
 # Default Instructor Model
 # https://huggingface.co/hkunlp/instructor-large
 EMBEDDING_MODEL_NAME = "hkunlp/instructor-large"  # Uses 1.5 GB of VRAM (High Accuracy with lower VRAM usage)
-
 
 def load_single_document(file_path: str) -> Document:
     # Loads a single document from a file path
@@ -116,36 +113,8 @@ def split_documents(documents: list[Document]) -> tuple[list[Document], list[Doc
     return text_docs, python_docs
 
 
-@click.command()
-@click.option(
-    "--device_type",
-    default="cuda" if torch.cuda.is_available() else "cpu",
-    type=click.Choice(
-        [
-            "cpu",
-            "cuda",
-            "ipu",
-            "xpu",
-            "mkldnn",
-            "opengl",
-            "opencl",
-            "ideep",
-            "hip",
-            "ve",
-            "fpga",
-            "ort",
-            "xla",
-            "lazy",
-            "vulkan",
-            "mps",
-            "meta",
-            "hpu",
-            "mtia",
-        ],
-    ),
-    help="Device to run on. (Default is cuda)",
-)
-def main(device_type):
+def main():
+    logging.info('Ingest Started')
     # Load documents and split in chunks
     logging.info(f"Loading documents from {SOURCE_DIRECTORY}")
     documents = load_documents(SOURCE_DIRECTORY)
@@ -162,30 +131,17 @@ def main(device_type):
     # Create embeddings
     embeddings = HuggingFaceInstructEmbeddings(
         model_name=EMBEDDING_MODEL_NAME,
-        model_kwargs={"device": device_type},
+        model_kwargs={"device": "cuda"},
     )
-    # change the embedding type here if you are running into issues.
-    # These are much smaller embeddings and will work for most appications
-
-    # embeddings = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
-
+    
+    logging.info('Generating DB')
+    
     db = Chroma.from_documents(
         texts,
         embeddings,
         persist_directory=PERSIST_DIRECTORY,
         client_settings=CHROMA_SETTINGS,
-
     )
-   
-
 
 if __name__ == "__main__":
-    logging.basicConfig(
-        format="%(asctime)s - %(levelname)s - %(filename)s:%(lineno)s - %(message)s", level=logging.INFO
-    )
-    main()
-
-
-__import__('pysqlite3')
-import sys
-sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+    main()    

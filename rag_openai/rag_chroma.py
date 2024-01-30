@@ -1,10 +1,6 @@
 import os
 
 from langchain.vectorstores import Chroma
-from chromadb.config import Settings
-from langchain.prompts.chat import (
-    PromptTemplate
-)
 from langchain.embeddings import AzureOpenAIEmbeddings
 from langchain.llms import AzureOpenAI
 from langchain.chains import RetrievalQA
