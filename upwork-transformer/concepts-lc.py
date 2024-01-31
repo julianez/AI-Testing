@@ -19,6 +19,7 @@ TEMPERATURE = 0.1  # Sampling temperature
 
 FS_ROWS = 50 # Number of few shot examples for concept
 QUESTIONS = 1  # Number of questions
+SEED = 34 # Seed for random questions
 
 MODELS_PATH = "../../models"
 
@@ -103,7 +104,7 @@ filtered_train = dataset["train"].select(indices)
 filtered_train = filtered_train.filter(lambda example: example["question"].find(example["title"].replace('_',' ')) != -1)
 
 # Specify the number of random rows for few-shot
-random_sample = filtered_train.shuffle().select(range(FS_ROWS))
+random_sample = filtered_train.shuffle(SEED).select(range(FS_ROWS))
 
 #question
 filtered_validation = dataset["validation"].filter(lambda example: example["question"].find(example["title"].replace('_',' ')) != -1)

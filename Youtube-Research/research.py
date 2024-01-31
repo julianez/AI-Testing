@@ -4,7 +4,7 @@ import re  # For email extraction
 import time  # For rate limiting
 
 # Authentication for YouTube Data API (replace with your API key)
-api_key = "AIzaSyC1lf5JC6efMju6HV1dJY6TnFDzykUmKb0"
+api_key = ""
 
 # Function to search for channels meeting the criteria
 def find_channels(topics):
