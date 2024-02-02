@@ -17,7 +17,7 @@ N_GPU_LAYERS = 30
 N_BATCH = 512
 TEMPERATURE = 0.1  # Sampling temperature
 
-FS_ROWS = 50 # Number of few shot examples for concept
+FS_ROWS = 3 # Number of few shot examples for concept
 QUESTIONS = 1  # Number of questions
 SEED = 34 # Seed for random questions
 
@@ -26,14 +26,14 @@ MODELS_PATH = "../../models"
 MODEL_ID = "TheBloke/Llama-2-7B-GGUF"
 MODEL_BASENAME = "llama-2-7b.Q4_K_M.gguf"
 
-MODELS_TOKEN_PATH ="../../models/models--TheBloke--Llama-2-7B-GGUF/snapshots"
+MODELS_TOKEN_PATH ="../../models/Llama-2-7b-hf"
 
 
 # Define a function to generate concept using few-shot examples
 def concept_question(llm, question, examples):
     
     prompt = fr'''{" ".join([f"Q: {example['question']} -> C: {example['title'].replace('_',' ')}" for example in examples])} Q: {question}'''
-    
+    print (prompt);
     return llm.create_completion(prompt,
                  stop=["Q:", "\n"], # Stop generating just before the model would generate a new question
                  echo=False # Echo the prompt back in the output

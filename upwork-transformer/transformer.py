@@ -1,31 +1,62 @@
-from transformers import pipeline
+import torch
+import logging
+from transformers import LlamaForCausalLM, LlamaTokenizer
 
-# Load the question-answering pipeline with a model fine-tuned on SQuAD
-nlp = pipeline("question-answering")
+LOGGING=logging
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Example text and question
-context = "The capital of France is Paris. It is located on the Seine River."
-question = "What is the main topic of this paragraph?"
+# Load the Llama-2-7b model and tokenizer
+#model_name = "meta-llama/Llama-2-7b-hf"
+#model_name = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
+model_name = "openlm-research/open_llama_3b_v2"
+#model_name = "afmck/testing-llama-tiny"
+#model_name = "TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T"
 
-# Get the answer, which often encapsulates the key concept
-answer = nlp(question=question, context=context)["answer"]
-print("Answer:", answer)  # Output: Answer: The capital of France
+tokenizer = LlamaTokenizer.from_pretrained(model_name)
+model = LlamaForCausalLM.from_pretrained(model_name)
 
-# Further analysis to extract more specific concepts:
+# Input text
+input_text = "What is the capital of Colombia?"
 
-# Tokenize the context and question
-from transformers import AutoTokenizer, AutoModelForQuestionAnswering
+# Tokenize input
+input_ids = tokenizer(input_text, return_tensors='pt')['input_ids']
 
-#model_name = "bert-base-uncased"  # Choose a suitable model
-model_name = "meta-llama/Llama-2-7b-hf"
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModelForQuestionAnswering.from_pretrained(model_name)
+# Access model layers
+embeddings = model.get_input_embeddings()
 
-inputs = tokenizer(question, context, return_tensors="pt")
-outputs = model(**inputs)
+#attention = model.get_decoder()
+#ffn = attention.layers[0].mlp
+#output_layer = model.lm_head
 
-# Analyze the attention patterns to identify important tokens
-attention_weights = outputs.attentions[-1]  # Last layer attention
+# Pass input through model layers
+embedded_input = embeddings(input_ids)  # Get embedded representation
 
-# Extract highly attended tokens and analyze their semantic roles
-# for potential concept identification using additional NLP techniques
+#attention_output = attention(embedded_input)  # Get attention output
+#ffn_output = ffn(attention_output)  # Apply feedforward network
+#logits = output_layer(ffn_output)  # Get final logits
+
+# Generate text using top-k or top-p sampling
+# https://huggingface.co/docs/transformers/v4.18.0/en/main_classes/text_generation
+with torch.no_grad():
+    generated_ids = model.generate(
+        #input_ids = input_ids,
+        inputs_embeds = embedded_input,
+        num_return_sequences=1,
+        min_length=1,
+        max_length=50,
+        do_sample=True,
+        top_p=0.9,
+        temperature=0.1,
+        num_beams = 6, 
+        length_penalty= 1.5,
+        no_repeat_ngram_size=1,
+    )
+
+print("embedded_input: ",embedded_input)
+print("generated_ids:",generated_ids)
+
+
+generated_text = tokenizer.decode(generated_ids[0], skip_special_tokens=True)
+
+print("generated_text_2:",generated_text)
+

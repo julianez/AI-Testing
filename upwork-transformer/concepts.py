@@ -1,24 +1,35 @@
+import os
 import torch
 import logging
 
 from transformers import LlamaTokenizer, LlamaForCausalLM, TextGenerationPipeline
+
+# Set environment variable
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
 # Configure the logging module
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
+print(device)
+
+torch.cuda.set_device(device)
+torch.backends.cudnn.allow_tf32 = False
+torch.cuda.empty_cache()
+
 # Load the Llama-2-7b model and tokenizer
 model_name = "meta-llama/Llama-2-7b-hf"
 
 logging.info('LlamaTokenizer')
 tokenizer = LlamaTokenizer.from_pretrained(model_name)
+
 logging.info('LlamaForCausalLM')
 model = LlamaForCausalLM.from_pretrained(model_name)
 model = model.to(device)
 
 logging.info('TextGenerationPipeline')
-pipeline = TextGenerationPipeline(model=model, tokenizer=tokenizer)
+pipeline = TextGenerationPipeline(model=model, tokenizer=tokenizer, batch_size=2)
 
 # Define the prompt
 prompt = "Explain the concept of gravity in simple terms."
